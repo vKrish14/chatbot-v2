@@ -1,28 +1,26 @@
+import json
 import time
+from typing import List, Dict, Any, AsyncGenerator
 # pyrefly: ignore [missing-import]
 from openai import AsyncOpenAI
-from app.models.chat import ChatResponse
-from app.models.memory import Message
 from app.core.config import settings
+from app.providers.providers import LLMProvider
 
-client = AsyncOpenAI(
-    api_key=settings.openai_api_key,
-    base_url=settings.openai_base_url
-)
-
-class ChatService:
-    async def generate_stream(self, messages: list[Message], model: str):
-        import json
+class OpenRouterLLMProvider(LLMProvider):
+    def __init__(self):
+        self.client = AsyncOpenAI(
+            api_key=settings.openai_api_key,
+            base_url=settings.openai_base_url
+        )
+        
+    async def generate_stream(self, messages: List[Dict[str, str]], model: str, temperature: float = 0.7) -> AsyncGenerator[Dict[str, Any], None]:
         start_time = time.time()
         
-        # Convert Pydantic messages to dict format
-        api_messages = [{"role": msg.role, "content": msg.content} for msg in messages]
-        
         try:
-            stream = await client.chat.completions.create(
+            stream = await self.client.chat.completions.create(
                 model=model,
-                messages=api_messages,
-                temperature=0.7,
+                messages=messages,
+                temperature=temperature,
                 max_tokens=1024,
                 stream=True,
                 logprobs=True,
@@ -37,7 +35,6 @@ class ChatService:
                     content = chunk.choices[0].delta.content
                     total_tokens += 1
                     
-                    # Accumulate logprobs for Perplexity and Entropy
                     try:
                         if chunk.choices[0].logprobs and chunk.choices[0].logprobs.content:
                             logprob = chunk.choices[0].logprobs.content[0].logprob
@@ -45,36 +42,31 @@ class ChatService:
                     except (AttributeError, IndexError):
                         pass
                     
-                    yield f'data: {json.dumps({"type": "content", "content": content})}\n\n'
+                    yield {"type": "content", "content": content}
                     
         except Exception as e:
-            yield f'data: {json.dumps({"type": "content", "content": f"Error during streaming: {str(e)}" })}\n\n'
+            yield {"type": "content", "content": f"Error during streaming: {str(e)}"}
             total_tokens = 0
             logprob_sum = 0.0
             
         latency = time.time() - start_time
         latency_ms = round(latency * 1000)
         
-        # Transformer Mechanics Mathematics
-        # 1. Perplexity & Entropy
         avg_logprob = (logprob_sum / total_tokens) if total_tokens > 0 else 0
         perplexity = round(2.71828 ** (-avg_logprob), 2) if total_tokens > 0 else 0
         entropy = round(-avg_logprob, 3)
         
-        # 2. KV Cache Footprint (Simulated for an 8B model: 2 * seq_len * layers * heads * dim_head * 2 bytes)
-        # Using Llama 3 8B params: 32 layers, 32 heads, 128 dim
-        seq_len = total_tokens + sum(len(m["content"].split()) for m in api_messages)
+        seq_len = total_tokens + sum(len(m["content"].split()) for m in messages)
         kv_cache_bytes = 2 * seq_len * 32 * 32 * 128 * 2
         kv_cache_mb = round(kv_cache_bytes / (1024 * 1024), 2)
         
-        # 3. Attention Complexity O(N^2 * d)
         attention_flops = int((seq_len ** 2) * 4096)
         
         metrics = {
             "latency_ms": latency_ms,
             "total_tokens": int(total_tokens),
             "tokens_per_sec": round(total_tokens / latency if latency > 0 else 0, 1),
-            "context_usage": len(api_messages), 
+            "context_usage": len(messages), 
             "transformer_mechanics": {
                 "perplexity": perplexity,
                 "avg_entropy": entropy,
@@ -84,6 +76,4 @@ class ChatService:
             }
         }
         
-        yield f'data: {json.dumps({"type": "metrics", "metrics": metrics})}\n\n'
-
-chat_service = ChatService()
+        yield {"type": "metrics", "metrics": metrics}

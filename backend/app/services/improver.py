@@ -35,6 +35,8 @@ class PromptImproverService:
             improved_prompt=improved_prompt,
             improvement_metrics={
                 "latency_ms": round(latency * 1000, 2),
+                "original_tokens": len(original_prompt.split()),
+                "improved_tokens": len(improved_prompt.split()),
                 "tokens_added": len(improved_prompt.split()) - len(original_prompt.split())
             }
         )

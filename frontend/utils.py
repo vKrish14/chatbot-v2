@@ -39,14 +39,71 @@ def improve_prompt_api(prompt):
         pass
     return None
 
-def chat_api(messages, model):
+def chat_stream_api(messages, model, **kwargs):
+    import json
     try:
-        payload = {"messages": messages, "model": model}
-        response = requests.post(f"{API_BASE_URL}/chat", json=payload, timeout=60)
+        payload = {
+            "messages": messages, 
+            "model": model,
+            "search_strategy": kwargs.get("search_strategy", "similarity"),
+            "top_k": kwargs.get("top_k", 4),
+            "similarity_threshold": kwargs.get("similarity_threshold", 0.5)
+        }
+        response = requests.post(f"{API_BASE_URL}/chat/stream", json=payload, stream=True, timeout=60)
+        
+        if response.status_code == 200:
+            for line in response.iter_lines():
+                if line:
+                    decoded_line = line.decode('utf-8')
+                    if decoded_line.startswith("data: "):
+                        data_str = decoded_line[6:]
+                        try:
+                            data = json.loads(data_str)
+                            if data.get("type") == "content":
+                                yield data.get("content", "")
+                            elif data.get("type") == "metrics":
+                                st.session_state["last_generation_metrics"] = data.get("metrics")
+                        except json.JSONDecodeError:
+                            pass
+        else:
+            yield f"API Error: {response.status_code} - {response.text}"
+    except Exception as e:
+        yield f"Connection Exception: {str(e)}"
+
+def upload_document_api(file_obj):
+    try:
+        files = {"file": (file_obj.name, file_obj, file_obj.type)}
+        response = requests.post(f"{API_BASE_URL}/upload", files=files, timeout=30)
         if response.status_code == 200:
             return response.json()
-        else:
-            print(f"API Error: {response.status_code} - {response.text}")
     except Exception as e:
-        print(f"Connection Exception: {e}")
+        pass
     return None
+
+def get_documents_api():
+    try:
+        response = requests.get(f"{API_BASE_URL}/documents", timeout=5)
+        if response.status_code == 200:
+            return response.json()
+    except Exception as e:
+        pass
+    return []
+
+def delete_document_api(document_id):
+    try:
+        response = requests.delete(f"{API_BASE_URL}/documents/{document_id}", timeout=5)
+        if response.status_code == 200:
+            return True
+    except Exception as e:
+        pass
+    return False
+
+def get_diagnostics_api():
+    try:
+        response = requests.get(f"{API_BASE_URL}/diagnostics/state", timeout=2)
+        if response.status_code == 200:
+            return response.json()
+    except Exception as e:
+        pass
+    return None
+

@@ -10,7 +10,7 @@ services:
       - .env
     environment:
       - ENVIRONMENT=development
-      
+
   frontend:
     build:
       context: .

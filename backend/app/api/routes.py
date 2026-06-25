@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import time
 from app.models.memory import MemoryProcessRequest, MemoryProcessResponse
@@ -7,6 +7,7 @@ from app.models.prompt import PromptImproveRequest, PromptImproveResponse
 from app.services.improver import prompt_improver
 from app.models.chat import ChatRequest, ChatResponse
 from app.services.chat import chat_service
+from fastapi.responses import StreamingResponse
 
 router = APIRouter()
 
@@ -33,6 +34,10 @@ async def process_memory(request: MemoryProcessRequest):
 async def improve_prompt(request: PromptImproveRequest):
     return await prompt_improver.improve_prompt(request.original_prompt)
 
-@router.post("/chat", response_model=ChatResponse)
-async def chat(request: ChatRequest):
-    return await chat_service.generate_response(request.messages, request.model)
+@router.post("/chat/stream")
+async def chat_stream(request: ChatRequest):
+    return StreamingResponse(
+        chat_service.generate_stream(request.messages, request.model),
+        media_type="text/event-stream"
+    )
+

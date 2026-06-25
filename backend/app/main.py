@@ -14,7 +14,15 @@ app = FastAPI(
 )
 
 # Include API routes
-app.include_router(api_router, prefix="/api")
+from app.api.chat import router as chat_router
+from app.api.upload import router as upload_router
+from app.api.diagnostics import router as diagnostics_router
+from app.api.routes import router as core_router # keep memory/improve stuff
+
+app.include_router(chat_router, prefix="/api")
+app.include_router(upload_router, prefix="/api")
+app.include_router(diagnostics_router, prefix="/api")
+app.include_router(core_router, prefix="/api")
 
 @app.on_event("startup")
 async def startup_event():
