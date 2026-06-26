@@ -3,7 +3,7 @@ from utils import check_backend_health
 
 def render_sidebar():
     with st.sidebar:
-        st.markdown('<div class="gradient-title" style="font-size: 1.5rem; margin-bottom: 24px;">KrishGPT System</div>', unsafe_allow_html=True)
+        st.markdown('<div class="gradient-title" style="font-size: 1.5rem; margin-bottom: 24px;">KrishGPT</div>', unsafe_allow_html=True)
         
         # Backend Status
         is_healthy = check_backend_health()

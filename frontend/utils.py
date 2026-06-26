@@ -1,8 +1,7 @@
 import os
 import requests
 import streamlit as st
-
-API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000/api")
+API_BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:8000/api")
 
 def check_backend_health():
     try:
