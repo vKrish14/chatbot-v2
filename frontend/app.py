@@ -110,6 +110,7 @@ def main():
                 with st.expander("Prompt Optimization Logs", expanded=False):
                     metrics = st.session_state["last_improvement"].get("improvement_metrics", {})
                     st.write(f"**Original:** {st.session_state['last_improvement']['original_prompt']}")
+                    st.write(f"**Improved:** {st.session_state['last_improvement']['improved_prompt']}")
                     st.write(f"**Latency:** {metrics.get('latency_ms', 0)} ms")
                     st.write(f"**Tokens Added:** {metrics.get('tokens_added', 0)}")
 
