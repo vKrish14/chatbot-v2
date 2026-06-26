@@ -94,12 +94,13 @@ def main():
             
             # 2. Handle Text Input
             original_prompt = prompt.text if (hasattr(prompt, "text") and prompt.text) else "Please analyze the uploaded document."
+            prompt_to_send = original_prompt
             
             if sidebar_config.get("use_improver"):
                 with st.spinner("Optimizing logic..."):
-                    improved_data = improve_prompt_api(prompt)
+                    improved_data = improve_prompt_api(original_prompt)
                     if improved_data:
-                        prompt = improved_data["improved_prompt"]
+                        prompt_to_send = improved_data["improved_prompt"]
                         st.session_state["last_improvement"] = improved_data
                         
             # Display user message in chat message container
@@ -113,7 +114,7 @@ def main():
                     st.write(f"**Tokens Added:** {metrics.get('tokens_added', 0)}")
 
             # Add user message to chat history
-            st.session_state["messages"].append({"role": "user", "content": original_prompt})
+            st.session_state["messages"].append({"role": "user", "content": prompt_to_send})
 
             # Display assistant response in chat message container
             with st.chat_message("assistant"):
