@@ -6,7 +6,7 @@ API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000/api")
 
 def check_backend_health():
     try:
-        response = requests.get(f"{API_BASE_URL}/health", timeout=2)
+        response = requests.get(f"{API_BASE_URL}/health", timeout=3)
         if response.status_code == 200:
             return True
     except requests.exceptions.RequestException:
@@ -16,10 +16,10 @@ def check_backend_health():
 def format_chat_message(role, content):
     return {"role": role, "content": content}
 
-def process_memory_api(messages, context_window):
+def process_memory_api(messages, context_window, session_id="default"):
     try:
         payload = {
-            "session_id": "default",
+            "session_id": session_id,
             "messages": messages,
             "context_window": context_window
         }
@@ -39,10 +39,11 @@ def improve_prompt_api(prompt):
         pass
     return None
 
-def chat_stream_api(messages, model, **kwargs):
+def chat_stream_api(messages, model, session_id="default", **kwargs):
     import json
     try:
         payload = {
+            "session_id": session_id,
             "messages": messages, 
             "model": model,
             "search_strategy": kwargs.get("search_strategy", "similarity"),
@@ -70,28 +71,29 @@ def chat_stream_api(messages, model, **kwargs):
     except Exception as e:
         yield f"Connection Exception: {str(e)}"
 
-def upload_document_api(file_obj):
+def upload_document_api(file_obj, session_id="default"):
     try:
         files = {"file": (file_obj.name, file_obj, file_obj.type)}
-        response = requests.post(f"{API_BASE_URL}/upload", files=files, timeout=30)
+        data = {"session_id": session_id}
+        response = requests.post(f"{API_BASE_URL}/upload", files=files, data=data, timeout=30)
         if response.status_code == 200:
             return response.json()
     except Exception as e:
         pass
     return None
 
-def get_documents_api():
+def get_documents_api(session_id="default"):
     try:
-        response = requests.get(f"{API_BASE_URL}/documents", timeout=5)
+        response = requests.get(f"{API_BASE_URL}/documents", params={"session_id": session_id}, timeout=5)
         if response.status_code == 200:
             return response.json()
     except Exception as e:
         pass
     return []
 
-def delete_document_api(document_id):
+def delete_document_api(document_id, session_id="default"):
     try:
-        response = requests.delete(f"{API_BASE_URL}/documents/{document_id}", timeout=5)
+        response = requests.delete(f"{API_BASE_URL}/documents/{document_id}", params={"session_id": session_id}, timeout=5)
         if response.status_code == 200:
             return True
     except Exception as e:

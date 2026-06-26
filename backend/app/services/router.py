@@ -11,7 +11,7 @@ class PipelineRouter:
         query = context.user_query.lower()
         if "search" in query or "web" in query:
             context.pipeline_type = "web"
-        elif "document" in query or "file" in query or "report" in query:
+        elif "document" in query or "file" in query or "report" in query or "summarize" in query or "pdf" in query:
             context.pipeline_type = "rag"
         elif not context.pipeline_type:
             context.pipeline_type = "hybrid" # default to both

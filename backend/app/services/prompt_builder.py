@@ -3,6 +3,7 @@ from app.rag_engine.citations import CitationFormatter
 from app.events.types import PromptEvent
 from app.diagnostics.event_bus import event_bus
 import time
+from datetime import datetime, timezone, timedelta
 
 class PromptBuilder:
     def __init__(self):
@@ -11,23 +12,22 @@ class PromptBuilder:
     def build(self, context: ConversationContext) -> str:
         start_time = time.time()
         
+        ist_tz = timezone(timedelta(hours=5, minutes=30))
+        current_time = datetime.now(ist_tz).strftime("%Y-%m-%d %I:%M:%S %p IST")
         # Base System Prompt
-        sys_prompt = "You are an advanced enterprise AI assistant."
+        sys_prompt = f"You are an advanced enterprise AI assistant. The current date and time is {current_time}."
         
-        # Add Sources
-        formatted_sources = ""
-        if context.final_sources:
-            sys_prompt += "\n\nYou must answer the user's query using the following context sources. If the answer is not in the sources, say you don't know.\n\n"
-            formatted_sources = self.citation_formatter.format_sources(context.final_sources)
-            sys_prompt += formatted_sources
-            
         context.system_prompt = sys_prompt
         
-        # We assume history is passed separately to LLM, so final_prompt is just the user query.
-        # However, if we need to wrap everything into one, we would do it here.
-        # But typically we pass a list of messages. We will build the `system` message.
+        # Build Final Prompt with Sources (Recency Bias optimization)
+        final_prompt = context.user_query
         
-        context.final_prompt = context.user_query
+        formatted_sources = ""
+        if context.final_sources:
+            formatted_sources = self.citation_formatter.format_sources(context.final_sources)
+            final_prompt = f"Context Information:\n{formatted_sources}\n\nBased on the context information above, answer the following query: {context.user_query}\nIf the answer is not in the context, say you don't know."
+            
+        context.final_prompt = final_prompt
         
         # Rough token estimation for events
         sys_tokens = len(sys_prompt.split())

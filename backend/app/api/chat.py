@@ -22,6 +22,7 @@ async def chat_stream(request: ChatRequest):
     
     # 1. Initialize Conversation Context
     context = ConversationContext(
+        session_id=request.session_id,
         user_query=request.messages[-1].content if request.messages else "",
         history=request.messages[:-1] if len(request.messages) > 1 else [],
         model=request.model,

@@ -12,6 +12,7 @@ class RetrieverEvent(BaseEvent):
     chunks_retrieved: int
     avg_similarity: Optional[float] = None
     threshold: Optional[float] = None
+    sources: Optional[List[Dict[str, Any]]] = None
 
 class EmbeddingEvent(BaseEvent):
     model: str

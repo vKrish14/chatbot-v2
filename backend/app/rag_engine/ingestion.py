@@ -28,21 +28,24 @@ class IngestionPipeline:
         return {}
         
     def _save_metadata(self):
-        with open(self.metadata_path, 'w') as f:
-            json.dump(self._documents_cache, f, indent=2)
+        try:
+            with open(self.metadata_path, 'w') as f:
+                json.dump(self._documents_cache, f, indent=2)
+        except Exception:
+            pass # Handle read-only environments gracefully
             
-    def get_all_documents(self) -> List[DocumentMetadata]:
-        return [DocumentMetadata(**doc) for doc in self._documents_cache.values()]
+    def get_all_documents(self, session_id: str = "default") -> List[DocumentMetadata]:
+        return [DocumentMetadata(**doc) for doc in self._documents_cache.values() if doc.get("session_id", "default") == session_id]
         
-    def delete_document(self, document_id: str):
-        if document_id in self._documents_cache:
+    def delete_document(self, document_id: str, session_id: str = "default"):
+        if document_id in self._documents_cache and self._documents_cache[document_id].get("session_id", "default") == session_id:
             # We would also want to remove from vector store here, but Chroma doesn't 
             # easily support delete by metadata out of the box in this simple wrapper.
             # In a real app we'd call vector_store.delete(where={"document_id": document_id})
             del self._documents_cache[document_id]
             self._save_metadata()
 
-    def process_file(self, file_content: bytes, filename: str) -> DocumentMetadata:
+    def process_file(self, file_content: bytes, filename: str, session_id: str = "default") -> DocumentMetadata:
         # 1. Load
         raw_docs = self.loader.load(file_content, filename)
         
@@ -54,11 +57,14 @@ class IngestionPipeline:
         _, ext = os.path.splitext(filename)
         doc_meta = DocumentMetadata(
             filename=filename,
-            file_type=ext.lower()
+            file_type=ext.lower(),
+            session_id=session_id
         )
         
         # 4. Chunk
         chunks = self.chunker.chunk_documents(raw_docs, doc_meta.document_id, filename)
+        for chunk in chunks:
+            chunk.metadata["session_id"] = session_id
         
         doc_meta.page_count = len(raw_docs)
         doc_meta.chunk_count = len(chunks)

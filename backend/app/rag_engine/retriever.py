@@ -7,7 +7,7 @@ class Retriever:
         self.vector_store = ProviderFactory.get_vectorstore_provider()
         self.embedding_provider = ProviderFactory.get_embedding_provider()
         
-    def retrieve(self, query: str, strategy: str = "similarity", top_k: int = 4, threshold: float = 0.5) -> List[Source]:
+    def retrieve(self, query: str, strategy: str = "similarity", top_k: int = 4, threshold: float = 0.0, session_id: str = "default") -> List[Source]:
         # 1. Embed query
         query_embedding = self.embedding_provider.embed_query(query)
         
@@ -16,7 +16,8 @@ class Retriever:
         sources = self.vector_store.search(
             query_embedding=query_embedding,
             top_k=top_k,
-            threshold=threshold
+            threshold=threshold,
+            session_id=session_id
         )
         
         return sources

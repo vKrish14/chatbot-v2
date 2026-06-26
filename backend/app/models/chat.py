@@ -3,6 +3,7 @@ from typing import List, Optional
 from app.models.memory import Message
 
 class ChatRequest(BaseModel):
+    session_id: str = "default"
     messages: List[Message]
     model: str
     temperature: float = 0.7

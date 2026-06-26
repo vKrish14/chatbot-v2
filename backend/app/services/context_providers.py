@@ -24,8 +24,20 @@ class ContextProvidersLayer:
                     query=context.user_query,
                     strategy=context.search_strategy,
                     top_k=context.top_k,
-                    threshold=context.similarity_threshold
+                    threshold=context.similarity_threshold,
+                    session_id=context.session_id
                 )
+                
+                if not sources and context.pipeline_type in ["rag", "hybrid"]:
+                    # Fallback: if the user explicitly queried the document (e.g. "summarize") 
+                    # but similarity was too low, bypass the threshold to return the document's chunks.
+                    sources = self.retriever.retrieve(
+                        query=context.user_query,
+                        strategy=context.search_strategy,
+                        top_k=context.top_k,
+                        threshold=0.0,
+                        session_id=context.session_id
+                    )
                 context.retrieved_chunks = sources
                 
                 # Emit event
@@ -37,7 +49,8 @@ class ContextProvidersLayer:
                     chunks_retrieved=len(sources),
                     avg_similarity=sum(s.similarity for s in sources) / len(sources) if sources else 0.0,
                     threshold=context.similarity_threshold,
-                    latency_ms=round((time.time() - start_time) * 1000)
+                    latency_ms=round((time.time() - start_time) * 1000),
+                    sources=[s.model_dump() for s in sources]
                 ))
             except Exception as e:
                 context.failures.append(f"Vector Retrieval Error: {str(e)}")
@@ -58,7 +71,8 @@ class ContextProvidersLayer:
                     strategy="web_search",
                     top_k=context.top_k,
                     chunks_retrieved=len(sources),
-                    latency_ms=round((time.time() - start_time) * 1000)
+                    latency_ms=round((time.time() - start_time) * 1000),
+                    sources=[s.model_dump() for s in sources]
                 ))
             except Exception as e:
                 context.failures.append(f"Web Retrieval Error: {str(e)}")

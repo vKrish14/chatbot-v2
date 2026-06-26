@@ -1,0 +1,23 @@
+{
+  "1173a390-b8ac-44ac-b394-6433632c337d": {
+    "filename": "sample pdf.pdf",
+    "document_id": "1173a390-b8ac-44ac-b394-6433632c337d",
+    "upload_timestamp": 1782399379.994579,
+    "file_type": ".pdf",
+    "page_count": 1,
+    "chunk_count": 1,
+    "embedded": true,
+    "embedding_model": "bge-small-en-v1.5"
+  },
+  "d85aca61-60af-4b68-9f9b-1b554ac06039": {
+    "filename": "sample pdf.pdf",
+    "session_id": "4da2ac6c-64bf-4be8-97d8-ef86d82fdb90",
+    "document_id": "d85aca61-60af-4b68-9f9b-1b554ac06039",
+    "upload_timestamp": 1782402455.244934,
+    "file_type": ".pdf",
+    "page_count": 1,
+    "chunk_count": 1,
+    "embedded": true,
+    "embedding_model": "bge-small-en-v1.5"
+  }
+}

@@ -28,7 +28,7 @@ class VectorStoreProvider(ABC):
         pass
     
     @abstractmethod
-    def search(self, query_embedding: List[float], top_k: int = 4, threshold: float = 0.0) -> List[Source]:
+    def search(self, query_embedding: List[float], top_k: int = 4, threshold: float = 0.0, session_id: str = "default") -> List[Source]:
         pass
 
 class WebSearchProvider(ABC):

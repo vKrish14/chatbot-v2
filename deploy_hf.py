@@ -1,13 +1,11 @@
 import os
 from huggingface_hub import HfApi
-api_key = None
-base_url = None
-with open(".env", "r") as f:
-    for line in f:
-        if line.startswith("OPENAI_API_KEY="):
-            api_key = line.split("=", 1)[1].strip()
-        elif line.startswith("OPENAI_BASE_URL="):
-            base_url = line.split("=", 1)[1].strip()
+from dotenv import load_dotenv
+
+load_dotenv()
+
+api_key = os.getenv("OPENAI_API_KEY")
+base_url = os.getenv("OPENAI_BASE_URL")
 
 # Credentials
 token = os.getenv("HF_TOKEN", "")

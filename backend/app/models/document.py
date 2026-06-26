@@ -5,6 +5,7 @@ import uuid
 
 class DocumentMetadata(BaseModel):
     filename: str
+    session_id: str = "default"
     document_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     upload_timestamp: float = Field(default_factory=lambda: datetime.now().timestamp())
     file_type: str
